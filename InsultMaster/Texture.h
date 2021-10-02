@@ -15,6 +15,12 @@ public:
 	bool Load();
 	void Render(int x, int y);
 
+	int GetWidth() { return m_width; }
+	int GetHeight() { return m_height; }
+
+	SDL_Texture* GetSDLTexture() { return m_texture; }
+	SDL_Surface* GetSDLSurface() { return m_surface; }
+
 private:
 	std::string m_filename;
 	SDL_Color m_transparencyKey;

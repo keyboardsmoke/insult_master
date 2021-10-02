@@ -17,6 +17,8 @@ bool Texture::Load()
 
 	if (m_surface == nullptr)
 	{
+		printf("Unable to load image from surface [%s]\n", IMG_GetError());
+
 		return false;
 	}
 
@@ -28,15 +30,19 @@ bool Texture::Load()
 
 	if (m_texture == nullptr)
 	{
+		printf("Unable to create texture from surface [%s]\n", SDL_GetError());
+
 		return false;
 	}
 
 	if (SDL_QueryTexture(m_texture, nullptr, nullptr, &m_width, &m_height) != 0)
 	{
+		printf("Unable to query texture dims [%s]\n", SDL_GetError());
+
 		return false;
 	}
 
-	return false;
+	return true;
 }
 
 void Texture::Render(int x, int y)

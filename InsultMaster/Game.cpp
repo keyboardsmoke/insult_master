@@ -8,8 +8,11 @@ SDL_Rect g_windowRect{};
 SDL_Rect g_windowScaledRect{};
 uint8_t* g_bbPixels = nullptr;
 int g_bbPitch = 0;
+float g_renderScale = 0.0f;
 
 std::vector<Game::RenderCallback> g_renderCallbacks;
+std::vector<Game::ButtonDownCallback> g_buttonDownCallbacks;
+std::vector<Game::ButtonUpCallback> g_buttonUpCallbacks;
 
 SDL_Window* Game::GetWindow()
 {
@@ -39,6 +42,11 @@ const SDL_Rect& Game::GetWindowRect()
 const SDL_Rect& Game::GetWindowScaledRect()
 {
 	return g_windowScaledRect;
+}
+
+const float Game::GetWindowScale()
+{
+	return g_renderScale;
 }
 
 bool Game::Initialize(const std::string& windowName, const SDL_Rect& windowRect, const char** errorMsg, float renderScale)
@@ -83,6 +91,8 @@ bool Game::Initialize(const std::string& windowName, const SDL_Rect& windowRect,
 	// 64 x 48 now lol
 	SDL_RenderSetScale(g_renderer, renderScale, renderScale);
 
+	g_renderScale = renderScale;
+
 	memcpy(&g_windowRect, &windowRect, sizeof(SDL_Rect));
 
 	g_windowScaledRect.x = g_windowRect.x;
@@ -96,6 +106,16 @@ bool Game::Initialize(const std::string& windowName, const SDL_Rect& windowRect,
 void Game::RegisterRenderCallback(RenderCallback cb)
 {
 	g_renderCallbacks.emplace_back(cb);
+}
+
+void Game::RegisterButtonDownCallback(ButtonDownCallback cb)
+{
+	g_buttonDownCallbacks.emplace_back(cb);
+}
+
+void Game::RegisterButtonUpCallback(ButtonUpCallback cb)
+{
+	g_buttonUpCallbacks.emplace_back(cb);
 }
 
 void Game::Render()
@@ -113,6 +133,26 @@ void Game::Render()
 			{
 			case SDL_QUIT:
 				close = 1;
+				break;
+			case SDL_KEYDOWN:
+			case SDL_JOYBUTTONDOWN:
+			case SDL_CONTROLLERBUTTONDOWN:
+			case SDL_FINGERDOWN:
+				for (auto& cb : g_buttonDownCallbacks)
+				{
+					cb(&event);
+				}
+
+				break;
+			case SDL_KEYUP:
+			case SDL_JOYBUTTONUP:
+			case SDL_CONTROLLERBUTTONUP:
+			case SDL_FINGERUP:
+				for (auto& cb : g_buttonUpCallbacks)
+				{
+					cb(&event);
+				}
+
 				break;
 			}
 		}
