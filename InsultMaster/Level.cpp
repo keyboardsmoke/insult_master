@@ -103,7 +103,7 @@ void Level::ClearText()
 bool Level::Load()
 {
 	// We really should have a class for this..
-	g_gameFont = TTF_OpenFont("../Resources/fonts/BarcadeBrawl.ttf", 18);
+	g_gameFont = TTF_OpenFont(RESOURCE_FOLDER "fonts/BarcadeBrawl.ttf", 18);
 
 	if (g_gameFont == nullptr)
 	{

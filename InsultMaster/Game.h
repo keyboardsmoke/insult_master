@@ -4,6 +4,12 @@
 #include <vector>
 #include "SDLIncludes.h"
 
+#ifdef _DEBUG
+#define RESOURCE_FOLDER "../Resources/"
+#else
+#define RESOURCE_FOLDER "Resources/"
+#endif
+
 class Game
 {
 public:

@@ -14,14 +14,14 @@ enum class eAudioState
 };
 
 std::map<unsigned int, Track> sounds{
-	{ static_cast<unsigned int>(eAudioState::HEY_MAN), Track("../Resources/sound/hey_man.mp3") },
-	{ static_cast<unsigned int>(eAudioState::YOU_DUMB), Track("../Resources/sound/you_dumb.mp3") },
-	{ static_cast<unsigned int>(eAudioState::REBUKE_SOUND), Track("../Resources/sound/rebuke.mp3") },
-	{ static_cast<unsigned int>(eAudioState::BURNED), Track("../Resources/sound/burned.mp3") },
-	{ static_cast<unsigned int>(eAudioState::SAW_YOU_LOOKIN), Track("../Resources/sound/saw_you.mp3") },
-	{ static_cast<unsigned int>(eAudioState::JOE_MAMA), Track("../Resources/sound/joe_mama.mp3") },
+	{ static_cast<unsigned int>(eAudioState::HEY_MAN), Track(RESOURCE_FOLDER "sound/hey_man.mp3") },
+	{ static_cast<unsigned int>(eAudioState::YOU_DUMB), Track(RESOURCE_FOLDER "sound/you_dumb.mp3") },
+	{ static_cast<unsigned int>(eAudioState::REBUKE_SOUND), Track(RESOURCE_FOLDER "sound/rebuke.mp3") },
+	{ static_cast<unsigned int>(eAudioState::BURNED), Track(RESOURCE_FOLDER "sound/burned.mp3") },
+	{ static_cast<unsigned int>(eAudioState::SAW_YOU_LOOKIN), Track(RESOURCE_FOLDER "sound/saw_you.mp3") },
+	{ static_cast<unsigned int>(eAudioState::JOE_MAMA), Track(RESOURCE_FOLDER "sound/joe_mama.mp3") },
 	// rebuke sound plays here again
-	{ static_cast<unsigned int>(eAudioState::CLASSIC_COMEBACK), Track("../Resources/sound/classic_comeback.mp3") },
-	{ static_cast<unsigned int>(eAudioState::JOE_MAMA_X3_INCINERATION), Track("../Resources/sound/joe_mama_incineration.mp3") },
-	{ static_cast<unsigned int>(eAudioState::INSULT_MASTER), Track("../Resources/sound/u_win.mp3") }
+	{ static_cast<unsigned int>(eAudioState::CLASSIC_COMEBACK), Track(RESOURCE_FOLDER "sound/classic_comeback.mp3") },
+	{ static_cast<unsigned int>(eAudioState::JOE_MAMA_X3_INCINERATION), Track(RESOURCE_FOLDER "/sound/joe_mama_incineration.mp3") },
+	{ static_cast<unsigned int>(eAudioState::INSULT_MASTER), Track(RESOURCE_FOLDER "sound/u_win.mp3") }
 };

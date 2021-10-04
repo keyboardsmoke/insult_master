@@ -15,11 +15,10 @@
 #define WINDOW_H 480
 #define RENDER_SCALE 8.0f
 
-//Texture joe1("../Resources/images/joe1.bmp");
-Sprite roastie("../Resources/images/roastie.bmp", 32);
-Sprite joe("../Resources/images/joe.bmp", 32);
-Sprite fire("../Resources/images/fire.bmp", 32);
-Sprite smoke("../Resources/images/smoke.bmp", 32);
+Sprite roastie(RESOURCE_FOLDER "images/roastie.bmp", 32);
+Sprite joe(RESOURCE_FOLDER "images/joe.bmp", 32);
+Sprite fire(RESOURCE_FOLDER "images/fire.bmp", 32);
+Sprite smoke(RESOURCE_FOLDER "images/smoke.bmp", 32);
 
 // Smoke Animations
 Animation smokeInvisible(true);
