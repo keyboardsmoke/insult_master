@@ -22,101 +22,263 @@ Sprite fire("../Resources/images/fire.bmp", 32);
 Sprite smoke("../Resources/images/smoke.bmp", 32);
 
 // Smoke Animations
-Animation smokeInvisible;
-Animation smokeSmoking;
+Animation smokeInvisible(true);
+Animation smokeSmoking(true);
 
 // Fire Animations
-Animation fireInvisible;
-Animation fireBurning;
+Animation fireInvisible(true);
+Animation fireBurning(true);
 
 // Roastie Animations
-Animation roastieIdle;
-Animation roastieHeyManTalking;
-Animation roastieAccuseTalking;
-Animation roastieAngryIdle;
-Animation roastieBurned;
-Animation roastieDead;
+Animation roastieIdle(true);
+Animation roastieAngryIdle(true);
+Animation roastieDead(true);
+Animation roastieBurned(true);
 
 // Joe Animations
-Animation joeIdle;
-Animation joeTalkingWatch;
-Animation joeTalking;
-Animation joeLaughing;
+Animation joeIdle(true);
+Animation joeLaughIdle(true);
 
-Animation* currentRoastieAnim = &roastieIdle;
+// Script animations
+Animation roastieHeyMan;
+Animation roastieSawYou;
+
+Animation joeYouDumb;
+Animation joeMamaYouDid;
+Animation joeMamaJoeMamaJoeMama;
+
+Animation* currentRoastieAnim = &roastieHeyMan;
 Animation* currentJoeAnim = &joeIdle;
 Animation* currentFireAnim = &fireInvisible;
 Animation* currentSmokeAnim = &smokeInvisible;
 
-eActs g_currentAct = eActs::HEY_MAN_YOU_STOLE_MY_WRISTWATCH;
+Timer g_screenMessageTimer;
+Timer g_fireStartTimer;
 
-static void ProcessAnimations()
-{
+bool g_waitingForInput = false;
 
-}
+unsigned int g_currentAct = static_cast<unsigned int>(eActs::HEY_MAN_YOU_STOLE_MY_WRISTWATCH);
 
 static void RenderPlayers()
 {
 	// Render player effects (smoke, fire)
-	currentFireAnim->Progress(fire, 7, 14, SDL_GetTicks());
-	currentSmokeAnim->Progress(smoke, 7, 2, SDL_GetTicks());
+	currentFireAnim->Progress(fire, 9, 12, SDL_GetTicks());
+	currentSmokeAnim->Progress(smoke, 8, 0, SDL_GetTicks());
 
 	// Want to render players above their effects
-	currentRoastieAnim->Progress(roastie, 8, 20, SDL_GetTicks());
-	currentJoeAnim->Progress(joe, 40, 20, SDL_GetTicks());
+	currentRoastieAnim->Progress(roastie, 8, 18, SDL_GetTicks());
+	currentJoeAnim->Progress(joe, 40, 18, SDL_GetTicks());
+}
+
+static void SwitchToAct()
+{
+	switch (static_cast<eActs>(g_currentAct))
+	{
+	case eActs::YOU_DUMB_I_ALREADY_HAVE_A_WRISTWATCH:
+		currentRoastieAnim = &roastieIdle; // Set him to idle, he gets angry when hes BURNED
+		currentJoeAnim = &joeYouDumb;
+
+		sounds[static_cast<unsigned int>(eAudioState::YOU_DUMB)].Play();
+
+		break;
+	case eActs::I_SAW_YOU_LOOKIN_AT_IT:
+		currentRoastieAnim = &roastieSawYou;
+		currentJoeAnim = &joeIdle;
+
+		sounds[static_cast<unsigned int>(eAudioState::SAW_YOU_LOOKIN)].Play();
+		break;
+	case eActs::JOE_MAMA_YOU_DID:
+		currentRoastieAnim = &roastieIdle;
+		currentJoeAnim = &joeMamaYouDid;
+
+		sounds[static_cast<unsigned int>(eAudioState::JOE_MAMA)].Play();
+		break;
+	case eActs::JOE_MAMA_JOE_MAMA_JOE_MAMA:
+		currentRoastieAnim = &roastieBurned;
+		currentJoeAnim = &joeMamaJoeMamaJoeMama;
+
+		sounds[static_cast<unsigned int>(eAudioState::JOE_MAMA_X3_INCINERATION)].Play();
+
+		g_fireStartTimer.Start(600);
+		g_fireStartTimer.SetFinishedCallback([]() -> void
+		{
+			Level::SetTextLine1("INCINERATION!");
+
+			currentFireAnim = &fireBurning;
+		});
+
+		break;
+	case eActs::YOURE_THE_INSULT_MASTER:
+		Level::SetTextColor({ 235, 230, 20, 255 });
+		Level::SetTextLine1("YOU'RE THE");
+		Level::SetTextLine2("INSULT MASTER!");
+
+		sounds[static_cast<unsigned int>(eAudioState::INSULT_MASTER)].Play();
+
+		currentJoeAnim = &joeLaughIdle;
+		currentRoastieAnim = &roastieDead;
+		currentFireAnim = &fireInvisible;
+		currentSmokeAnim = &smokeSmoking;
+		break;
+	}
 }
 
 static void ButtonDown(SDL_Event* event)
 {
-	// stuff
+	if (g_waitingForInput)
+	{
+		++g_currentAct;
+
+		g_waitingForInput = false;
+
+		SwitchToAct();
+	}
 }
 
 static void Render()
 {
-	ProcessAnimations();
-
+	g_screenMessageTimer.Run();
+	g_fireStartTimer.Run();
 	Level::RenderLevel();
-
 	RenderPlayers();
+	Level::RenderMessage();
 }
+
+static void HeyManFinished(Animation* anim, void* userdata)
+{
+	// We need to wait for user input...
+	g_waitingForInput = true;
+}
+
+static void YouDumbFinished(Animation* anim, void* userdata)
+{
+	// switch to burned, don't setup input yet
+	Level::SetTextColor({ 255, 255, 255, 255 });
+	Level::SetTextLine1("BUUUUUURNED!");
+	sounds[static_cast<unsigned int>(eAudioState::BURNED)].Play();
+	currentJoeAnim = &joeIdle;
+	currentRoastieAnim = &roastieAngryIdle;
+
+	g_screenMessageTimer.Start(2000);
+	g_screenMessageTimer.SetFinishedCallback([]() -> void
+	{
+		Level::ClearText();
+
+		++g_currentAct;
+
+		SwitchToAct();
+	});
+}
+
+static void SawYouFinished(Animation* anim, void* userdata)
+{
+	g_waitingForInput = true;
+}
+
+static void JoeMamaFinished(Animation* anim, void* userdata)
+{
+	Level::SetTextColor({ 255, 255, 255, 255 });
+	Level::SetTextLine1("CLASSIC");
+	Level::SetTextLine2("COMEBACK!");
+	
+	sounds[static_cast<unsigned int>(eAudioState::CLASSIC_COMEBACK)].Play();
+
+	currentJoeAnim = &joeIdle;
+	currentRoastieAnim = &roastieIdle;
+
+	g_screenMessageTimer.Start(1500);
+	g_screenMessageTimer.SetFinishedCallback([]() -> void
+	{
+		Level::ClearText();
+
+		// We are actually waiting for input here
+		g_waitingForInput = true;
+	});
+}
+
+static void JoeMamaJoeMamaJoeMamaFinished(Animation* anim, void* userdata)
+{
+	g_screenMessageTimer.Start(2600);
+	g_screenMessageTimer.SetFinishedCallback([]() -> void
+	{
+		Level::ClearText();
+
+		++g_currentAct;
+
+		SwitchToAct();
+	});
+}
+
+/*
+
+*/
 
 static void InitializeAnimations()
 {
-	// Roastie Idle
-	roastieIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 1);
+	// Idle anims
+	roastieIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 1); // Roastie Idle
+	roastieAngryIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_ANGRY), 1); // Angry standing
+	roastieBurned.AddStage(static_cast<unsigned int>(eRoastieAnims::BURNED), 1); // Burning (start fire)
+	roastieDead.AddStage(static_cast<unsigned int>(eRoastieAnims::CHARRED), 1); // Charred
+	joeIdle.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 1); // Joe Idle
 
-	// Roastie HeyMan
-	roastieHeyManTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_TALKING), 1);
+	// Laughing loop for end game
+	joeLaughIdle.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_1), 200);
+	joeLaughIdle.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_2), 200);
+	joeLaughIdle.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_3), 200);
+	joeLaughIdle.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_4), 200);
 
-	// Roastie 
-	roastieAccuseTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
-	roastieAccuseTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	// Act 1
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 1000);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_TALKING), 100);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieHeyMan.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 200);
+	roastieHeyMan.AddFinishCallback(HeyManFinished);
 
-	// Angry standing
-	roastieAngryIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_ANGRY), 1);
+	// Act 2
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH_TALKING), 200);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH_TALKING), 200);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH_TALKING), 200);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH_TALKING), 200);
+	joeYouDumb.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
+	joeYouDumb.AddFinishCallback(YouDumbFinished);
 
-	// Burning (start fire)
-	roastieBurned.AddStage(static_cast<unsigned int>(eRoastieAnims::BURNED), 1);
+	// Act 3
+	roastieSawYou.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieSawYou.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieSawYou.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieSawYou.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+	roastieSawYou.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieSawYou.AddFinishCallback(SawYouFinished);
 
-	// Charred
-	roastieDead.AddStage(static_cast<unsigned int>(eRoastieAnims::CHARRED), 1);
+	// Act 4
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::SHRUGGING), 500);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 400);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 400);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 400);
+	joeMamaYouDid.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaYouDid.AddFinishCallback(JoeMamaFinished);
 
-	// Joe Idle
-	joeIdle.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 1);
-
-	// Talking showing watch
-	joeTalkingWatch.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
-	joeTalkingWatch.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH_TALKING), 200);
-
-	// Joe Talking
-	joeTalking.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 400);
-	joeTalking.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 200);
-
-	// Laughing loop
-	joeLaughing.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_1), 200);
-	joeLaughing.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_2), 300);
-	joeLaughing.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_3), 200);
-	joeLaughing.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_4), 300);
+	// Act 5
+	joeMamaJoeMamaJoeMama.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaJoeMamaJoeMama.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 400);
+	joeMamaJoeMamaJoeMama.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaJoeMamaJoeMama.AddStage(static_cast<unsigned int>(eJoeAnims::STAND_TALKING), 200);
+	joeMamaJoeMamaJoeMama.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 200);
+	joeMamaJoeMamaJoeMama.AddFinishCallback(JoeMamaJoeMamaJoeMamaFinished);
 
 	// Fire Invisible
 	fireInvisible.AddStage(0, 1);

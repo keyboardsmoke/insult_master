@@ -1,9 +1,13 @@
 #include "Game.h"
 #include "Level.h"
 
+static SDL_Color g_textColor{ 255, 255, 255 };
 static SDL_Color g_borderColor{ 255, 103, 75, 255 };
 static SDL_Color g_levelColor{ 102, 143, 85, 255 };
+
 static TTF_Font* g_gameFont = nullptr;
+
+static std::string g_textLines[2];
 
 static void RenderBorder()
 {
@@ -33,17 +37,13 @@ static void RenderBorder()
 	Render::ColorPixel(scaledRect.w - 3, scaledRect.h - 2, g_borderColor);
 }
 
-static void RenderText()
+static void RenderTextLine(int x, int y, const std::string& str)
 {
-	SDL_Rect textContainmentRect{ 4, 4, Game::GetWindowScaledRect().w - 8, 8 };
+	SDL_Rect textContainmentRect{ x, y, Game::GetWindowScaledRect().w - 8, 8 };
 
 	// ColorRect(textContainmentRect.x, textContainmentRect.y, textContainmentRect.w, textContainmentRect.h, { 0, 0, 0 });
 
-	SDL_Color textColor{ 255, 255, 255 };
-
-	SDL_Surface* textSurface = TTF_RenderText_Solid(g_gameFont, "BUUUUUURNED!", textColor);
-
-	// TTF_SizeText()
+	SDL_Surface* textSurface = TTF_RenderText_Solid(g_gameFont, str.c_str(), g_textColor);
 
 	if (textSurface)
 	{
@@ -65,6 +65,39 @@ static void RenderText()
 	{
 		printf("TTF Render Error [%s]\n", TTF_GetError());
 	}
+}
+
+static void RenderText()
+{
+	// We never have only the second set, so this makes sense. Shush.
+	if (g_textLines[0].empty())
+		return;
+	else
+		RenderTextLine(4, 4, g_textLines[0]);
+
+	if (!g_textLines[1].empty())
+		RenderTextLine(4, 10, g_textLines[1]);
+}
+
+void Level::SetTextColor(const SDL_Color& color)
+{
+	g_textColor = color;
+}
+
+void Level::SetTextLine1(const std::string text)
+{
+	g_textLines[0] = text;
+}
+
+void Level::SetTextLine2(const std::string text)
+{
+	g_textLines[1] = text;
+}
+
+void Level::ClearText()
+{
+	g_textLines[0] = std::string();
+	g_textLines[1] = std::string();
 }
 
 bool Level::Load()
@@ -98,6 +131,9 @@ void Level::RenderLevel()
 	SDL_RenderFillRect(Game::GetRenderer(), &r);
 
 	RenderBorder();
+}
 
+void Level::RenderMessage()
+{
 	RenderText();
 }

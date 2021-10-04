@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Timer.h"
+
 enum class eJoeAnims
 {
 	STANDING = 0,
@@ -9,7 +11,8 @@ enum class eJoeAnims
 	LAUGHING_2,
 	STAND_TALKING,
 	LAUGHING_3,
-	LAUGHING_4
+	LAUGHING_4,
+	SHRUGGING
 };
 
 enum class eRoastieAnims
@@ -27,12 +30,9 @@ enum class eActs
 {
 	HEY_MAN_YOU_STOLE_MY_WRISTWATCH,
 	YOU_DUMB_I_ALREADY_HAVE_A_WRISTWATCH,
-	BURNED,
 	I_SAW_YOU_LOOKIN_AT_IT,
 	JOE_MAMA_YOU_DID,
-	CLASSIC_COMEBACK,
 	JOE_MAMA_JOE_MAMA_JOE_MAMA,
-	INCINERATION,
 	YOURE_THE_INSULT_MASTER
 };
 
@@ -41,7 +41,7 @@ enum class eActs
 
 class Animation;
 
-typedef void (*AnimationFinishedCb)(Animation* anim);
+typedef void (*AnimationFinishedCb)(Animation* anim, void* userdata);
 
 class Animation
 {
@@ -55,19 +55,32 @@ class Animation
 	};
 
 public:
-	Animation() : m_stageTickCounter(-1), m_stages(), m_initialized(false), m_currentStage(0U) {}
+	Animation(bool loop = false) : m_changeTimer(), m_stages(), m_initialized(false), m_finished(false), m_currentStage(0U), m_loop(loop) {}
 
 	void AddStage(unsigned int frame, unsigned int ticks);
-	void AddFinishCallback(AnimationFinishedCb cb);
+	void AddFinishCallback(AnimationFinishedCb cb, void* userdata = nullptr);
 	void Progress(Sprite& sprite, int x, int y, unsigned int currentTick);
 
 private:
-	unsigned int m_stageTickCounter;
+	unsigned int GetLastFrame()
+	{
+		return m_stages.size() - 1;
+	}
+
+	bool IsFinalFrame()
+	{
+		return m_currentStage == GetLastFrame();
+	}
+
+	Timer m_changeTimer;
 
 	std::vector<Stage> m_stages;
 
 	bool m_initialized;
+	bool m_finished;
 	unsigned int m_currentStage;
 
-	std::vector<AnimationFinishedCb> m_callbacks;
+	std::vector<std::pair<AnimationFinishedCb, void*>> m_callbacks;
+
+	bool m_loop;
 };
