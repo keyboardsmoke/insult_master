@@ -19,15 +19,29 @@ enum class eRoastieAnims
 	POINTING_ANGRY_1,
 	POINTING_ANGRY_2,
 	STANDING_ANGRY,
-	BURNED_1,
-	BURNED_2,
-	CHARRED_1,
-	CHARRED_2,
-	CHARRED_3,
+	BURNED,
+	CHARRED
+};
+
+enum class eActs
+{
+	HEY_MAN_YOU_STOLE_MY_WRISTWATCH,
+	YOU_DUMB_I_ALREADY_HAVE_A_WRISTWATCH,
+	BURNED,
+	I_SAW_YOU_LOOKIN_AT_IT,
+	JOE_MAMA_YOU_DID,
+	CLASSIC_COMEBACK,
+	JOE_MAMA_JOE_MAMA_JOE_MAMA,
+	INCINERATION,
+	YOURE_THE_INSULT_MASTER
 };
 
 #include "Sprite.h"
 #include <vector>
+
+class Animation;
+
+typedef void (*AnimationFinishedCb)(Animation* anim);
 
 class Animation
 {
@@ -44,6 +58,7 @@ public:
 	Animation() : m_stageTickCounter(-1), m_stages(), m_initialized(false), m_currentStage(0U) {}
 
 	void AddStage(unsigned int frame, unsigned int ticks);
+	void AddFinishCallback(AnimationFinishedCb cb);
 	void Progress(Sprite& sprite, int x, int y, unsigned int currentTick);
 
 private:
@@ -53,4 +68,6 @@ private:
 
 	bool m_initialized;
 	unsigned int m_currentStage;
+
+	std::vector<AnimationFinishedCb> m_callbacks;
 };

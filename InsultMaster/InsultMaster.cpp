@@ -19,6 +19,11 @@
 Sprite roastie("../Resources/images/roastie.bmp", 32);
 Sprite joe("../Resources/images/joe.bmp", 32);
 Sprite fire("../Resources/images/fire.bmp", 32);
+Sprite smoke("../Resources/images/smoke.bmp", 32);
+
+// Smoke Animations
+Animation smokeInvisible;
+Animation smokeSmoking;
 
 // Fire Animations
 Animation fireInvisible;
@@ -26,6 +31,11 @@ Animation fireBurning;
 
 // Roastie Animations
 Animation roastieIdle;
+Animation roastieHeyManTalking;
+Animation roastieAccuseTalking;
+Animation roastieAngryIdle;
+Animation roastieBurned;
+Animation roastieDead;
 
 // Joe Animations
 Animation joeIdle;
@@ -36,10 +46,22 @@ Animation joeLaughing;
 Animation* currentRoastieAnim = &roastieIdle;
 Animation* currentJoeAnim = &joeIdle;
 Animation* currentFireAnim = &fireInvisible;
+Animation* currentSmokeAnim = &smokeInvisible;
+
+eActs g_currentAct = eActs::HEY_MAN_YOU_STOLE_MY_WRISTWATCH;
+
+static void ProcessAnimations()
+{
+
+}
 
 static void RenderPlayers()
 {
+	// Render player effects (smoke, fire)
 	currentFireAnim->Progress(fire, 7, 14, SDL_GetTicks());
+	currentSmokeAnim->Progress(smoke, 7, 2, SDL_GetTicks());
+
+	// Want to render players above their effects
 	currentRoastieAnim->Progress(roastie, 8, 20, SDL_GetTicks());
 	currentJoeAnim->Progress(joe, 40, 20, SDL_GetTicks());
 }
@@ -51,6 +73,8 @@ static void ButtonDown(SDL_Event* event)
 
 static void Render()
 {
+	ProcessAnimations();
+
 	Level::RenderLevel();
 
 	RenderPlayers();
@@ -59,10 +83,26 @@ static void Render()
 static void InitializeAnimations()
 {
 	// Roastie Idle
-	roastieIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 1000);
+	roastieIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING), 1);
+
+	// Roastie HeyMan
+	roastieHeyManTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_TALKING), 1);
+
+	// Roastie 
+	roastieAccuseTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_1), 200);
+	roastieAccuseTalking.AddStage(static_cast<unsigned int>(eRoastieAnims::POINTING_ANGRY_2), 200);
+
+	// Angry standing
+	roastieAngryIdle.AddStage(static_cast<unsigned int>(eRoastieAnims::STANDING_ANGRY), 1);
+
+	// Burning (start fire)
+	roastieBurned.AddStage(static_cast<unsigned int>(eRoastieAnims::BURNED), 1);
+
+	// Charred
+	roastieDead.AddStage(static_cast<unsigned int>(eRoastieAnims::CHARRED), 1);
 
 	// Joe Idle
-	joeIdle.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 1000);
+	joeIdle.AddStage(static_cast<unsigned int>(eJoeAnims::STANDING), 1);
 
 	// Talking showing watch
 	joeTalkingWatch.AddStage(static_cast<unsigned int>(eJoeAnims::SHOW_WATCH), 400);
@@ -79,11 +119,23 @@ static void InitializeAnimations()
 	joeLaughing.AddStage(static_cast<unsigned int>(eJoeAnims::LAUGHING_4), 300);
 
 	// Fire Invisible
-	fireInvisible.AddStage(0, 1000);
+	fireInvisible.AddStage(0, 1);
 
 	// Fire Burning
 	fireBurning.AddStage(1, 500);
 	fireBurning.AddStage(2, 500);
+
+	// Smoke Invisible
+	smokeInvisible.AddStage(7, 1);
+
+	// Smoke Smoking
+	smokeSmoking.AddStage(0, 100);
+	smokeSmoking.AddStage(1, 100);
+	smokeSmoking.AddStage(2, 100);
+	smokeSmoking.AddStage(3, 100);
+	smokeSmoking.AddStage(4, 100);
+	smokeSmoking.AddStage(5, 100);
+	smokeSmoking.AddStage(6, 100);
 }
 
 static bool LoadResources()
@@ -148,6 +200,13 @@ static bool LoadResources()
 	if (!fire.Load())
 	{
 		printf("Unable to load fire sprite [%s]\n", SDL_GetError());
+
+		return false;
+	}
+
+	if (!smoke.Load())
+	{
+		printf("Unable to load smoke sprite [%s]\n", SDL_GetError());
 
 		return false;
 	}
